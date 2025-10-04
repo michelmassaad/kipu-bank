@@ -1,7 +1,6 @@
 # KipuBank 🏦
 
 [![Solidity](https://img.shields.io/badge/Solidity-0.8.x-blue?logo=ethereum&logoColor=white)](https://soliditylang.org/) 
-[![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](https://opensource.org/licenses/MIT)
 
 ## Descripción
 **KipuBank** es un smart contract en **Solidity** que permite a los usuarios depositar y retirar ETH de forma segura.  
@@ -40,12 +39,14 @@ Implementa límites por transacción y un límite global de depósitos, usando b
 2. Crear un archivo `KipuBank.sol` en la carpeta `/contracts`.  
 3. Copiar y pegar el código del contrato.  
 4. Compilar con Solidity **0.8.x**.  
-5. Ir al apartado Deploy & Run transactions.
-6. Seleccionar el entorno testnet (`Remix VM`).  
-7. Configurar los parámetros del constructor:  
-   - `_withdrawalLimit` → Límite de retiro por transacción (wei).  
-   - `_bankCap` → Límite global de depósitos (wei).  
-8. Hacer clic en **Deploy**.  
+5. Ir al apartado **Deploy & Run Transactions**.
+6. Seleccionar el entorno testnet (`Remix VM` o inyectar proveedor con MetaMask).
+7. Ir a la sección **Deploy** para ver los parámetros del constructor.
+8. Configurar los parámetros del smart contract:  
+   - `_withdrawalLimit` → Límite de retiro por transacción (en wei).  
+   - `_bankCap` → Límite global de depósitos (en wei).  
+9. Una vez configurados, hacer clic en **Transact**.
+10. Para aprender a usar las funciones del contrato, revisa los [Ejemplos de Uso](#ejemplos-de-uso).
 
 ---
 
