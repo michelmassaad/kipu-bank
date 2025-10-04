@@ -73,7 +73,8 @@ Implementa límites por transacción y un límite global de depósitos, usando b
 1. Llamar a la función `deposit()`, ingresar el monto en **wei** en el apartado de Value y hacer clic en **deposit**.  
 2. Llamar a la función `withdrawal(amount)`, ingresar en el contrato el monto a retirar en **wei** y hacer clic en **withdrawal**.  
 3. Consultar balances con `getBalance(userAddress)`.  
-4. Consultar contadores con `TotalDeposits()` y `TotalWithdrawals()`.  
+4. Consultar contadores con `TotalDeposits` y `TotalWithdrawals`.  
+4. Consultar limites con `withdrawalLimit` y `bankCap`.  
 
 ---
 
