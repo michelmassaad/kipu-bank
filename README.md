@@ -46,7 +46,7 @@ Implementa límites por transacción y un límite global de depósitos, usando b
    - `_withdrawalLimit` → Límite de retiro por transacción (en wei).  
    - `_bankCap` → Límite global de depósitos (en wei).  
 9. Una vez configurados, hacer clic en **Transact**.
-10. Para aprender a usar las funciones del contrato, revisa los [Ejemplos de Uso](#ejemplos-de-uso).
+10. Para aprender a usar las funciones del contrato, revisa los [Ejemplo de uso en Remix](#ejemplo-de-uso-en-remix).
 
 ---
 
