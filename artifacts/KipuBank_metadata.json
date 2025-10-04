@@ -37,6 +37,17 @@
 				"type": "error"
 			},
 			{
+				"inputs": [
+					{
+						"internalType": "bytes",
+						"name": "errorData",
+						"type": "bytes"
+					}
+				],
+				"name": "WithdrawalFailed",
+				"type": "error"
+			},
+			{
 				"inputs": [],
 				"name": "WithdrawalLimitExceeded",
 				"type": "error"
@@ -119,6 +130,45 @@
 				"type": "function"
 			},
 			{
+				"inputs": [],
+				"name": "getBalance",
+				"outputs": [
+					{
+						"internalType": "uint256",
+						"name": "",
+						"type": "uint256"
+					}
+				],
+				"stateMutability": "view",
+				"type": "function"
+			},
+			{
+				"inputs": [],
+				"name": "totalDeposits",
+				"outputs": [
+					{
+						"internalType": "uint256",
+						"name": "",
+						"type": "uint256"
+					}
+				],
+				"stateMutability": "view",
+				"type": "function"
+			},
+			{
+				"inputs": [],
+				"name": "totalWithdrawals",
+				"outputs": [
+					{
+						"internalType": "uint256",
+						"name": "",
+						"type": "uint256"
+					}
+				],
+				"stateMutability": "view",
+				"type": "function"
+			},
+			{
 				"inputs": [
 					{
 						"internalType": "uint256",
@@ -146,16 +196,124 @@
 			}
 		],
 		"devdoc": {
-			"author": "michelmassaad",
+			"author": "Michel Massaad",
+			"details": "Implementa limites por transacción, limite global de depositos, errores personalizados y patron checks-effects-interactions",
+			"errors": {
+				"WithdrawalFailed(bytes)": [
+					{
+						"params": {
+							"errorData": "datos del error de la transferencia"
+						}
+					}
+				]
+			},
+			"events": {
+				"Deposit_Eth(address,uint256)": {
+					"params": {
+						"amount": "cantidad depositada en wei",
+						"user": "dirección del usuario que depositó"
+					}
+				},
+				"Withdrawal_Eth(address,uint256)": {
+					"params": {
+						"amount": "cantidad retirada en wei",
+						"user": "dirección del usuario que retiró"
+					}
+				}
+			},
 			"kind": "dev",
-			"methods": {},
-			"title": "Contrato KipuBank",
+			"methods": {
+				"constructor": {
+					"params": {
+						"_bankCap": "Límite global de depósitos",
+						"_withdrawalLimit": "Límite de retiro por transacción"
+					}
+				},
+				"deposit()": {
+					"details": "Verifica que el depósito sea mayor a 0 y que no supere el límite globalIncrementa el contador total de depósitos"
+				},
+				"getBalance()": {
+					"returns": {
+						"_0": "Balance en wei"
+					}
+				},
+				"withdrawal(uint256)": {
+					"details": "Verifica límite de retiro por transacción y saldo suficienteIncrementa el contador total de retiros",
+					"params": {
+						"amount": "Monto a retirar en wei"
+					}
+				}
+			},
+			"title": "KipuBank",
 			"version": 1
 		},
 		"userdoc": {
+			"errors": {
+				"BankCapExceeded()": [
+					{
+						"notice": "error cuando se supera el límite global de depósitos"
+					}
+				],
+				"InsufficientBalance()": [
+					{
+						"notice": "error cuando el usuario no tiene suficiente balance"
+					}
+				],
+				"InvalidAmount()": [
+					{
+						"notice": "Error cuando el monto es inválido (0)"
+					}
+				],
+				"WithdrawalFailed(bytes)": [
+					{
+						"notice": "error cuando el retiro falla"
+					}
+				],
+				"WithdrawalLimitExceeded()": [
+					{
+						"notice": "error cuando se supera el límite de retiro por transacción"
+					}
+				]
+			},
+			"events": {
+				"Deposit_Eth(address,uint256)": {
+					"notice": "Evento emitido cuando se deposita ETH"
+				},
+				"Withdrawal_Eth(address,uint256)": {
+					"notice": "Evento emitido cuando se retira ETH"
+				}
+			},
 			"kind": "user",
-			"methods": {},
-			"notice": "Contrato ....",
+			"methods": {
+				"balances(address)": {
+					"notice": "Saldo final de cada usuario"
+				},
+				"bankCap()": {
+					"notice": "Límite global de depósitos"
+				},
+				"constructor": {
+					"notice": "Inicializa el contrato con los límites de retiro y depósito"
+				},
+				"deposit()": {
+					"notice": "Deposita ETH en la bóveda del usuario"
+				},
+				"getBalance()": {
+					"notice": "Obtiene el saldo de un usuario"
+				},
+				"totalDeposits()": {
+					"notice": "Contador de depósitos"
+				},
+				"totalWithdrawals()": {
+					"notice": "Contador de retiros"
+				},
+				"withdrawal(uint256)": {
+					"notice": "Retira ETH de la bóveda del usuario"
+				},
+				"withdrawalLimit()": {
+					"notice": "Límite de retiro por transacción"
+				}
+			},
+			"notice": "Contrato de banco simple donde los usuarios pueden depositar y retirar ETH",
 			"version": 1
 		}
 	},
@@ -176,11 +334,11 @@
 	},
 	"sources": {
 		"contracts/KipuBank.sol": {
-			"keccak256": "0x4b467a72b74979297512d3e3e98e6fd1e28b38f287fc762eb771ac91fbb3cad8",
+			"keccak256": "0xe52a075cac8bb6f3151cc530914bdee8cff5d36725b9118e11c3bcfa4bbfaa96",
 			"license": "MIT",
 			"urls": [
-				"bzz-raw://8c4bf830d3714f46eea2d5455abab7ca05f2bd3625bc7ed888b876c44b8edebc",
-				"dweb:/ipfs/QmRs9yhxFjZixmL2JCVSEmPWvGTAqkgDUPRQrxeDpKaNUP"
+				"bzz-raw://d38f5e28ce057f317f96be9510fca1ecac7c5e827aa92995a93f25100761f49f",
+				"dweb:/ipfs/QmWDTt7ZYRrPCrK8QuVeYFHEE8mHwe6FmDsHtRY9RC5GJt"
 			]
 		}
 	},
