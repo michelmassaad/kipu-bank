@@ -1,6 +1,7 @@
 # KipuBank 🏦
 
 [![Solidity](https://img.shields.io/badge/Solidity-0.8.x-blue?logo=ethereum&logoColor=white)](https://soliditylang.org/) 
+[![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](https://opensource.org/licenses/MIT)
 
 ## Descripción
 **KipuBank** es un smart contract en **Solidity** que permite a los usuarios depositar y retirar ETH de forma segura.  
