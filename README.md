@@ -31,7 +31,7 @@ Implementa límites por transacción y un límite global de depósitos, usando b
 | `InsufficientBalance` | No hay saldo suficiente para retirar |
 | `InvalidAmount` | Monto inválido (0) |
 | `WithdrawalFailed(bytes errorData)` | La transferencia de ETH falló |
-
+| `ReentrantCall()` | Error for reentrancy guard |
 ---
 
 ## Despliegue
@@ -64,8 +64,8 @@ Implementa límites por transacción y un límite global de depósitos, usando b
 
 ### Eventos
 
-- `Deposit_Eth(address indexed user, uint256 amount)` → Emitido al realizar un depósito.  
-- `Withdrawal_Eth(address indexed user, uint256 amount)` → Emitido al realizar un retiro.  
+- `DepositEth(address indexed user, uint256 amount)` → Emitido al realizar un depósito.  
+- `WithdrawalEth(address indexed user, uint256 amount)` → Emitido al realizar un retiro.  
 
 ---
 
@@ -73,9 +73,9 @@ Implementa límites por transacción y un límite global de depósitos, usando b
 
 1. Llamar a la función `deposit()`, ingresar el monto en **wei** en el apartado de Value y hacer clic en **deposit**.  
 2. Llamar a la función `withdrawal(amount)`, ingresar en el contrato el monto a retirar en **wei** y hacer clic en **withdrawal**.  
-3. Consultar balances con `getBalance(userAddress)`.  
-4. Consultar contadores con `TotalDeposits` y `TotalWithdrawals`.  
-5. Consultar limites con `withdrawalLimit` y `bankCap`.  
+3. Consultar balances con `getBalance(userAddress)`y balance `totalDeposited`.  
+4. Consultar contadores con `depositCount` y `withdrawalCount`.  
+5. Consultar limites con `WITHDRAWAL_LIMIT` y `BANK_CAP`.  
 
 ---
 
@@ -87,3 +87,4 @@ Implementa límites por transacción y un límite global de depósitos, usando b
 - Variables `immutable` para los límites de retiro y depósito.  
 
 ---
+
