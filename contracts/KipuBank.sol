@@ -4,125 +4,171 @@ pragma solidity ^0.8.0;
 /**
  * @title KipuBank
  * @author Michel Massaad
- * @notice Contrato de banco simple donde los usuarios pueden depositar y retirar ETH
- * @dev Implementa limites por transacción, limite global de depositos, errores personalizados y patron checks-effects-interactions
+ * @notice A simple banking contract where users can deposit and withdraw ETH.
+ * @dev Implements transaction limits, a global deposit cap, custom errors, and follows security best practices.
  */
-
 contract KipuBank {
 
-     // ======= ERRORES PERSONALIZADOS =======
-     /// @notice error cuando se supera el límite global de depósitos
+    // =================================================================================================================
+    //                                                   STATE VARIABLES
+    // =================================================================================================================
+
+    // --- Immutable & Constant Variables ---
+    /// @notice The per-transaction withdrawal limit.
+    uint256 public immutable WITHDRAWAL_LIMIT;
+    /// @notice The global deposit cap for the entire bank.
+    uint256 public immutable BANK_CAP;
+
+    // --- Storage Variables ---
+    /// @notice The total amount of ETH currently deposited in the contract.
+    uint256 public totalDeposited;
+    /// @notice A counter for the total number of deposits made.
+    uint256 public depositCount;
+    /// @notice A counter for the total number of withdrawals made.
+    uint256 public withdrawalCount;
+    /// @notice Reentrancy guard flag.
+    bool private locked;
+
+    // --- Mappings ---
+    /// @notice Mapping from address to user balance.
+    mapping(address => uint256) public balances;
+
+    // =================================================================================================================
+    //                                                       EVENTS
+    // =================================================================================================================
+
+    /// @notice Emitted when a user deposits ETH.
+    /// @param user The address of the user who deposited.
+    /// @param amount The amount deposited in wei.
+    event Deposit(address indexed user, uint256 amount);
+
+    /// @notice Emitted when a user withdraws ETH.
+    /// @param user The address of the user who withdrew.
+    /// @param amount The amount withdrawn in wei.
+    event Withdrawal(address indexed user, uint256 amount);
+
+    // =================================================================================================================
+    //                                                      ERRORS
+    // =================================================================================================================
+
+    /// @notice Error thrown when the total deposits would exceed the bank's global cap.
     error BankCapExceeded();
-    /// @notice error cuando se supera el límite de retiro por transacción
+    /// @notice Error thrown when a withdrawal amount exceeds the per-transaction limit.
     error WithdrawalLimitExceeded();
-    /// @notice error cuando el usuario no tiene suficiente balance
+    /// @notice Error thrown when a user tries to withdraw more than their balance.
     error InsufficientBalance();
-    /// @notice Error cuando el monto es inválido (0)
+    /// @notice Error thrown when the provided amount is invalid (e.g., 0).
     error InvalidAmount();
-    /// @notice error cuando el retiro falla
-    /// @param errorData datos del error de la transferencia
+    /// @notice Error thrown when a withdrawal transfer fails.
+    /// @param errorData The data returned by the failed call.
     error WithdrawalFailed(bytes errorData);
+    /// @notice Error for reentrancy guard, thrown when a reentrant call is detected.
+    error ReentrantCall();
 
+    // =================================================================================================================
+    //                                                      MODIFIERS
+    // =================================================================================================================
 
-    // ====== VARIABLES ======
-    /// @notice Límite de retiro por transacción
-    uint256 public immutable withdrawalLimit; 
-    /// @notice Límite global de depósitos
-    uint256 public immutable bankCap; 
-    /// @notice Saldo final de cada usuario
-    mapping(address => uint256) public balances; 
-    /// @notice Contador de depósitos
-    uint256 public totalDeposits;                 
-    /// @notice Contador de retiros
-    uint256 public totalWithdrawals;           
+    /// @notice Prevents reentrancy attacks by locking the contract during a function's execution.
+    modifier nonReentrant() {
+        if (locked) revert ReentrantCall();
+        locked = true;
+        _;
+        locked = false;
+    }
 
-    // ======== EVENTOS ======
-     /// @notice Evento emitido cuando se deposita ETH
-    /// @param user dirección del usuario que depositó
-    /// @param amount cantidad depositada en wei
-    event Deposit_Eth(address indexed user, uint256 amount);
-    
-    /// @notice Evento emitido cuando se retira ETH
-    /// @param user dirección del usuario que retiró
-    /// @param amount cantidad retirada en wei
-    event Withdrawal_Eth(address indexed user, uint256 amount);
+    /// @notice Checks if the provided amount is greater than zero.
+    /// @param _amount The amount to check.
+    modifier nonZeroAmount(uint256 _amount) {
+        if (_amount == 0) revert InvalidAmount();
+        _;
+    }
 
-    // ====== CONSTRUCTOR ====
+    // =================================================================================================================
+    //                                                      CONSTRUCTOR
+    // =================================================================================================================
+
     /**
-     * @notice Inicializa el contrato con los límites de retiro y depósito
-     * @param _withdrawalLimit Límite de retiro por transacción
-     * @param _bankCap Límite global de depósitos
+     * @notice Initializes the contract with withdrawal and deposit limits.
+     * @param _withdrawalLimit The per-transaction withdrawal limit.
+     * @param _bankCap The global deposit cap.
      */
     constructor(uint256 _withdrawalLimit, uint256 _bankCap) {
-        withdrawalLimit = _withdrawalLimit;
-        bankCap = _bankCap;
-    }
-    
-    // ======= MODIFIER ======
-    bool flag; 
-    /// @notice Evita ataques de reentrancy
-    modifier reentrancyGuard() {
-        if (flag != false) revert(); // si ya está en ejecución, revierte
-        flag = true;
-        _;
-        flag = false; // resetea al terminar
+        WITHDRAWAL_LIMIT = _withdrawalLimit;
+        BANK_CAP = _bankCap;
     }
 
-    // ======== FUNCIONES =====
+    // =================================================================================================================
+    //                                                 EXTERNAL FUNCTIONS
+    // =================================================================================================================
 
     /**
-     * @notice Deposita ETH en la bóveda del usuario
-     * @dev Verifica que el depósito sea mayor a 0 y que no supere el límite global
-     * @dev Incrementa el contador total de depósitos
+     * @notice Deposits ETH into the user's balance.
+     * @dev Reverts if the amount is zero or if the deposit would exceed the global bank cap.
+     * @dev Follows the checks-effects-interactions pattern.
      */
+    function deposit() external payable nonZeroAmount(msg.value) {
+        // --- Checks ---
+        if (totalDeposited + msg.value > BANK_CAP) revert BankCapExceeded();
 
-    function deposit() external payable {
-        if (msg.value == 0) revert InvalidAmount();
-        if (balances[msg.sender] + msg.value > bankCap) revert BankCapExceeded();
-
-        balances[msg.sender] += msg.value; // actualizamos el balance interno del usuario
-        totalDeposits += 1;
-
-        emit Deposit_Eth(msg.sender, msg.value);
-    }
-
-    /**
-     * @notice Retira ETH de la bóveda del usuario
-     * @param amount Monto a retirar en wei
-     * @dev Verifica límite de retiro por transacción y saldo suficiente
-     * @dev Incrementa el contador total de retiros
-     */
-
-    function withdrawal(uint256 amount) external reentrancyGuard {
-        if (amount == 0) revert InvalidAmount();
-        if (amount > withdrawalLimit) revert WithdrawalLimitExceeded();
-        if (amount > balances[msg.sender]) revert InsufficientBalance();
-        
-        balances[msg.sender] -= amount; // efecto (actualización del estado)
-        totalWithdrawals++;
-        _transferEth(payable(msg.sender), amount); // interacción externa
-        emit Withdrawal_Eth(msg.sender, amount);
-    }
-
-     /**
-     * @notice Función privada que realiza una transferencia segura de ETH
-     * @param to Dirección del receptor
-     * @param amount Monto a transferir
-     */
-    function _transferEth(address payable to, uint256 amount) private {
-        (bool success, bytes memory errorData) = to.call{value: amount}("");
-        if (!success) {
-            // revertimos e incluimos el detalle del error
-            revert WithdrawalFailed(errorData);
+        // --- Effects ---
+        // Using unchecked as the check above prevents overflow, saving gas.
+        unchecked {
+            totalDeposited += msg.value;
         }
+        balances[msg.sender] += msg.value;
+        depositCount++;
+
+        // --- Interactions (none in this function) ---
+
+        emit Deposit(msg.sender, msg.value);
     }
 
     /**
-     * @notice Obtiene el saldo de un usuario
-     * @return Balance en wei
+     * @notice Withdraws ETH from the user's balance.
+     * @param _amount The amount to withdraw in wei.
+     * @dev Reverts if the amount is zero, exceeds the withdrawal limit, or if the user has insufficient balance.
+     * @dev Follows the checks-effects-interactions pattern.
+     */
+    function withdrawal(uint256 _amount) external nonReentrant nonZeroAmount(_amount) {
+        uint256 userBalance = balances[msg.sender]; // Read state once to save gas
+
+        // --- Checks ---
+        if (_amount > WITHDRAWAL_LIMIT) revert WithdrawalLimitExceeded();
+        if (_amount > userBalance) revert InsufficientBalance();
+
+        // --- Effects ---
+        balances[msg.sender] = userBalance - _amount;
+        totalDeposited -= _amount;
+        withdrawalCount++;
+
+        // --- Interaction ---
+        _transferEth(payable(msg.sender), _amount);
+
+        emit Withdrawal(msg.sender, _amount);
+    }
+
+    /**
+     * @notice Gets the balance of the message sender.
+     * @return The balance in wei.
      */
     function getBalance() external view returns (uint256) {
         return balances[msg.sender];
     }
 
+    // =================================================================================================================
+    //                                                 PRIVATE FUNCTIONS
+    // =================================================================================================================
+
+    /**
+     * @notice Internal function that performs a safe ETH transfer using the .call method.
+     * @param _to The recipient's address.
+     * @param _amount The amount to transfer.
+     */
+    function _transferEth(address payable _to, uint256 _amount) private {
+        (bool success, bytes memory errorData) = _to.call{value: _amount}("");
+        if (!success) {
+            revert WithdrawalFailed(errorData);
+        }
+    }
 }

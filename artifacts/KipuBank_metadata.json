@@ -37,6 +37,11 @@
 				"type": "error"
 			},
 			{
+				"inputs": [],
+				"name": "ReentrantCall",
+				"type": "error"
+			},
+			{
 				"inputs": [
 					{
 						"internalType": "bytes",
@@ -68,7 +73,7 @@
 						"type": "uint256"
 					}
 				],
-				"name": "Deposit_Eth",
+				"name": "Deposit",
 				"type": "event"
 			},
 			{
@@ -87,8 +92,34 @@
 						"type": "uint256"
 					}
 				],
-				"name": "Withdrawal_Eth",
+				"name": "Withdrawal",
 				"type": "event"
+			},
+			{
+				"inputs": [],
+				"name": "BANK_CAP",
+				"outputs": [
+					{
+						"internalType": "uint256",
+						"name": "",
+						"type": "uint256"
+					}
+				],
+				"stateMutability": "view",
+				"type": "function"
+			},
+			{
+				"inputs": [],
+				"name": "WITHDRAWAL_LIMIT",
+				"outputs": [
+					{
+						"internalType": "uint256",
+						"name": "",
+						"type": "uint256"
+					}
+				],
+				"stateMutability": "view",
+				"type": "function"
 			},
 			{
 				"inputs": [
@@ -111,7 +142,14 @@
 			},
 			{
 				"inputs": [],
-				"name": "bankCap",
+				"name": "deposit",
+				"outputs": [],
+				"stateMutability": "payable",
+				"type": "function"
+			},
+			{
+				"inputs": [],
+				"name": "depositCount",
 				"outputs": [
 					{
 						"internalType": "uint256",
@@ -120,13 +158,6 @@
 					}
 				],
 				"stateMutability": "view",
-				"type": "function"
-			},
-			{
-				"inputs": [],
-				"name": "deposit",
-				"outputs": [],
-				"stateMutability": "payable",
 				"type": "function"
 			},
 			{
@@ -144,20 +175,7 @@
 			},
 			{
 				"inputs": [],
-				"name": "totalDeposits",
-				"outputs": [
-					{
-						"internalType": "uint256",
-						"name": "",
-						"type": "uint256"
-					}
-				],
-				"stateMutability": "view",
-				"type": "function"
-			},
-			{
-				"inputs": [],
-				"name": "totalWithdrawals",
+				"name": "totalDeposited",
 				"outputs": [
 					{
 						"internalType": "uint256",
@@ -172,7 +190,7 @@
 				"inputs": [
 					{
 						"internalType": "uint256",
-						"name": "amount",
+						"name": "_amount",
 						"type": "uint256"
 					}
 				],
@@ -183,7 +201,7 @@
 			},
 			{
 				"inputs": [],
-				"name": "withdrawalLimit",
+				"name": "withdrawalCount",
 				"outputs": [
 					{
 						"internalType": "uint256",
@@ -197,27 +215,27 @@
 		],
 		"devdoc": {
 			"author": "Michel Massaad",
-			"details": "Implementa limites por transacción, limite global de depositos, errores personalizados y patron checks-effects-interactions",
+			"details": "Implements transaction limits, a global deposit cap, custom errors, and follows security best practices.",
 			"errors": {
 				"WithdrawalFailed(bytes)": [
 					{
 						"params": {
-							"errorData": "datos del error de la transferencia"
+							"errorData": "The data returned by the failed call."
 						}
 					}
 				]
 			},
 			"events": {
-				"Deposit_Eth(address,uint256)": {
+				"Deposit(address,uint256)": {
 					"params": {
-						"amount": "cantidad depositada en wei",
-						"user": "dirección del usuario que depositó"
+						"amount": "The amount deposited in wei.",
+						"user": "The address of the user who deposited."
 					}
 				},
-				"Withdrawal_Eth(address,uint256)": {
+				"Withdrawal(address,uint256)": {
 					"params": {
-						"amount": "cantidad retirada en wei",
-						"user": "dirección del usuario que retiró"
+						"amount": "The amount withdrawn in wei.",
+						"user": "The address of the user who withdrew."
 					}
 				}
 			},
@@ -225,22 +243,22 @@
 			"methods": {
 				"constructor": {
 					"params": {
-						"_bankCap": "Límite global de depósitos",
-						"_withdrawalLimit": "Límite de retiro por transacción"
+						"_bankCap": "The global deposit cap.",
+						"_withdrawalLimit": "The per-transaction withdrawal limit."
 					}
 				},
 				"deposit()": {
-					"details": "Verifica que el depósito sea mayor a 0 y que no supere el límite globalIncrementa el contador total de depósitos"
+					"details": "Reverts if the amount is zero or if the deposit would exceed the global bank cap.Follows the checks-effects-interactions pattern."
 				},
 				"getBalance()": {
 					"returns": {
-						"_0": "Balance en wei"
+						"_0": "The balance in wei."
 					}
 				},
 				"withdrawal(uint256)": {
-					"details": "Verifica límite de retiro por transacción y saldo suficienteIncrementa el contador total de retiros",
+					"details": "Reverts if the amount is zero, exceeds the withdrawal limit, or if the user has insufficient balance.Follows the checks-effects-interactions pattern.",
 					"params": {
-						"amount": "Monto a retirar en wei"
+						"_amount": "The amount to withdraw in wei."
 					}
 				}
 			},
@@ -251,69 +269,77 @@
 			"errors": {
 				"BankCapExceeded()": [
 					{
-						"notice": "error cuando se supera el límite global de depósitos"
+						"notice": "Error thrown when the total deposits would exceed the bank's global cap."
 					}
 				],
 				"InsufficientBalance()": [
 					{
-						"notice": "error cuando el usuario no tiene suficiente balance"
+						"notice": "Error thrown when a user tries to withdraw more than their balance."
 					}
 				],
 				"InvalidAmount()": [
 					{
-						"notice": "Error cuando el monto es inválido (0)"
+						"notice": "Error thrown when the provided amount is invalid (e.g., 0)."
+					}
+				],
+				"ReentrantCall()": [
+					{
+						"notice": "Error for reentrancy guard, thrown when a reentrant call is detected."
 					}
 				],
 				"WithdrawalFailed(bytes)": [
 					{
-						"notice": "error cuando el retiro falla"
+						"notice": "Error thrown when a withdrawal transfer fails."
 					}
 				],
 				"WithdrawalLimitExceeded()": [
 					{
-						"notice": "error cuando se supera el límite de retiro por transacción"
+						"notice": "Error thrown when a withdrawal amount exceeds the per-transaction limit."
 					}
 				]
 			},
 			"events": {
-				"Deposit_Eth(address,uint256)": {
-					"notice": "Evento emitido cuando se deposita ETH"
+				"Deposit(address,uint256)": {
+					"notice": "Emitted when a user deposits ETH."
 				},
-				"Withdrawal_Eth(address,uint256)": {
-					"notice": "Evento emitido cuando se retira ETH"
+				"Withdrawal(address,uint256)": {
+					"notice": "Emitted when a user withdraws ETH."
 				}
 			},
 			"kind": "user",
 			"methods": {
-				"balances(address)": {
-					"notice": "Saldo final de cada usuario"
+				"BANK_CAP()": {
+					"notice": "The global deposit cap for the entire bank."
 				},
-				"bankCap()": {
-					"notice": "Límite global de depósitos"
+				"WITHDRAWAL_LIMIT()": {
+					"notice": "The per-transaction withdrawal limit."
+				},
+				"balances(address)": {
+					"notice": "Mapping from address to user balance."
 				},
 				"constructor": {
-					"notice": "Inicializa el contrato con los límites de retiro y depósito"
+					"notice": "Initializes the contract with withdrawal and deposit limits."
 				},
 				"deposit()": {
-					"notice": "Deposita ETH en la bóveda del usuario"
+					"notice": "Deposits ETH into the user's balance."
+				},
+				"depositCount()": {
+					"notice": "A counter for the total number of deposits made."
 				},
 				"getBalance()": {
-					"notice": "Obtiene el saldo de un usuario"
+					"notice": "Gets the balance of the message sender."
 				},
-				"totalDeposits()": {
-					"notice": "Contador de depósitos"
-				},
-				"totalWithdrawals()": {
-					"notice": "Contador de retiros"
+				"totalDeposited()": {
+					"notice": "The total amount of ETH currently deposited in the contract."
 				},
 				"withdrawal(uint256)": {
-					"notice": "Retira ETH de la bóveda del usuario"
+					"notice": "Withdraws ETH from the user's balance."
 				},
-				"withdrawalLimit()": {
-					"notice": "Límite de retiro por transacción"
+				"withdrawalCount()": {
+					"notice": "A counter for the total number of withdrawals made."
 				}
 			},
-			"notice": "Contrato de banco simple donde los usuarios pueden depositar y retirar ETH",
+			"notice": "A simple banking contract where users can deposit and withdraw ETH.",
 			"version": 1
 		}
 	},
@@ -334,11 +360,11 @@
 	},
 	"sources": {
 		"contracts/KipuBank.sol": {
-			"keccak256": "0xe52a075cac8bb6f3151cc530914bdee8cff5d36725b9118e11c3bcfa4bbfaa96",
+			"keccak256": "0x5c4a75e5854e7970770a353c50ebd0a9fafdd011992f6df5e5c6495f2b8d418b",
 			"license": "MIT",
 			"urls": [
-				"bzz-raw://d38f5e28ce057f317f96be9510fca1ecac7c5e827aa92995a93f25100761f49f",
-				"dweb:/ipfs/QmWDTt7ZYRrPCrK8QuVeYFHEE8mHwe6FmDsHtRY9RC5GJt"
+				"bzz-raw://65631800df8a9ab985c241087e0e52d770c162e95f65b107593276ee14607d3b",
+				"dweb:/ipfs/Qma8ob9gcUdC4MAYXuraa6joppeZwaE32bz4uxNKZmRpBX"
 			]
 		}
 	},
